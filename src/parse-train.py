@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # import sys
 import numpy as np
-
+import matplotlib.pyplot as plt
+import math
 NUM_LINES = 100000#10000000
 
 TrainFile = "../data/train" #sys.argv[1]
@@ -11,6 +12,47 @@ OutFile = "out" #sys.argv[3]
 def ComputeDwellTimes(Clicks, DwellTimes):
 	for v in Clicks.values():
 		DwellTimes.append(v)
+
+
+
+def plotRepeatQueryPowerLaw(repeatedClicks):
+	repeatQ = 0
+	repeatQ_X = [ ] # x value is basically v in the inner loop below
+	repeatQ_Y = [ ] # Y values is the number of urlids that have same value for any user.
+	repeatQ_dict = {}
+	for userId in repeatedClicks:
+		# print "we can optimize these clicks for %s" %(userId)
+		for urlId in repeatedClicks[userId]:
+			v = repeatedClicks[userId][urlId]
+			if v > 1 :
+				# print "userId: %s urlID: %svalue: %d" %(userId,urlId, v)
+				repeatQ += v
+				if v not in repeatQ_dict:
+					repeatQ_dict[v] = 1
+				else:
+					repeatQ_dict[v] += 1
+
+	repeatQ_X = sorted(repeatQ_dict.keys())
+ 	repeatQ_Y = [repeatQ_dict[x] for x in repeatQ_X]
+
+
+ 	#find the slope with polyfit
+ 	repeatQ_x_log = [math.log(x) for x in repeatQ_X if repeatQ_dict[x] > 2]
+ 	repeatQ_y_log = [math.log(y) for y in repeatQ_Y if y > 2 ]
+ 	m,b = np.polyfit(repeatQ_x_log,repeatQ_y_log,1)
+ 	power_law_line_y = [pow(x,m) *math.exp(b)  for x in repeatQ_X]
+ 	# print repeatQ_dict
+ 	plt.plot(repeatQ_X,repeatQ_Y,'ro',repeatQ_X,power_law_line_y)
+ 	plt.xlabel("Number of navigational queries")
+ 	plt.ylabel("Count")
+ 	plt.xscale('log')
+ 	plt.yscale('log')
+ 	plt.axis([2,max(repeatQ_X)*2, 1, max(repeatQ_Y)*2 ])
+ 	plt.title("Navigational queries")
+ 	print "slope of power law is ", m
+ 	plt.show()
+ 	return repeatQ
+
 
 with open(TrainFile) as train:
 	#test = open(TestFile)
@@ -108,10 +150,13 @@ with open(TrainFile) as train:
 			OutF.write("%f %f\n" % (X[i], Y[i]))
 	OutF.close()
 
+	repeatQ = plotRepeatQueryPowerLaw(repeatedClicks)
+
 	# print "Session IDs:", len(sessionIDs)
 	# print "User IDs:", len(userIDs)
 	# print "SERP IDs:", len(serpIDs)
 	print "URLs:", len(urls)
 	print "Queries:", len(queries)
+	print "Fraction of queries ", repeatQ*1.0/len(queries)
 	print "Domains:", len(domains)
 	#test.close()
