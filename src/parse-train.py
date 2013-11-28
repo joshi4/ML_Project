@@ -3,8 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-# import time
-NUM_LINES = 1000000#10000000
+import time
+NUM_LINES = 3000000#10000000
 
 TrainFile = "../data/train" #sys.argv[1]
 #TestFile = "test" #sys.argv[2]
@@ -42,7 +42,7 @@ def plotRepeatQueryPowerLaw(repeatedClicks):
  	repeatQ_y_log = [math.log(y) for y in repeatQ_Y if y > 2 ]
  	m,b = np.polyfit(repeatQ_x_log,repeatQ_y_log,1)
  	power_law_line_y = [pow(x,m) *math.exp(b)  for x in repeatQ_X]
- 	print repeatQ_dict
+ 	# print repeatQ_dict
  	plt.plot(repeatQ_X,repeatQ_Y,'ro',repeatQ_X,power_law_line_y)
  	plt.xlabel("Number of navigational queries")
  	plt.ylabel("Count")
@@ -55,7 +55,7 @@ def plotRepeatQueryPowerLaw(repeatedClicks):
  	return sum(repeatQ_dict.values())
 
 def main():
-
+	start = time.clock()
 	with open(TrainFile) as train:
 		#test = open(TestFile)
 		count = 0
@@ -135,28 +135,29 @@ def main():
 
 
 
-		print "Total clicks:", len(DwellTimes)
-		DwellTimes = np.array(DwellTimes)
-		maxTime = np.amax(DwellTimes)
-		for i in range(0,len(DwellTimes)):
-			if (DwellTimes[i] == -1):
-				DwellTimes[i] = maxTime
+ ######### COMMENTED OUT FOR NOW #####
+		# print "Total clicks:", len(DwellTimes)
+		# DwellTimes = np.array(DwellTimes)
+		# maxTime = np.amax(DwellTimes)
+		# for i in range(0,len(DwellTimes)):
+		# 	if (DwellTimes[i] == -1):
+		# 		DwellTimes[i] = maxTime
 
-		X = np.array(range(1,np.amax(DwellTimes)+1))
-		Y = np.bincount(DwellTimes)[1:].astype(float)
-		Ysum = np.sum(Y)
-		#Y /= Ysum
-		OutF = open(OutFile, 'w')
-		for i in range(len(X)):
-			if (Y[i] == 0):
-				continue
-			else:
-				OutF.write("%f %f\n" % (X[i], Y[i]))
-		OutF.close()
+		# X = np.array(range(1,np.amax(DwellTimes)+1))
+		# Y = np.bincount(DwellTimes)[1:].astype(float)
+		# Ysum = np.sum(Y)
+		# #Y /= Ysum
+		# OutF = open(OutFile, 'w')
+		# for i in range(len(X)):
+		# 	if (Y[i] == 0):
+		# 		continue
+		# 	else:
+		# 		OutF.write("%f %f\n" % (X[i], Y[i]))
+		# OutF.close()
 
-
+		end = time.clock()
 		repeatQ = plotRepeatQueryPowerLaw(repeatedClicks)
-
+		print end - start
 		# print "Session IDs:", len(sessionIDs)
 		# print "User IDs:", len(userIDs)
 		# print "SERP IDs:", len(serpIDs)
