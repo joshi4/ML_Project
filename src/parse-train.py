@@ -1,8 +1,10 @@
-#!/usr/bin/python
-import sys
+#!/usr/bin/env python
+# import sys
 import numpy as np
 
-TrainFile = "train" #sys.argv[1]
+NUM_LINES = 100000#10000000
+
+TrainFile = "../data/train" #sys.argv[1]
 #TestFile = "test" #sys.argv[2]
 OutFile = "out" #sys.argv[3]
 
@@ -15,20 +17,24 @@ with open(TrainFile) as train:
 	count = 0
 	sessionIDs = set()
 	userIDs = set()
-	serpIDs = set()
+	serpIDs = set() #Search Engine Results page id
 	urls = set()
 	domains = set()
-	queries = set()
-	terms = set()
+	queries = set() #query id
+	terms = set() # list of terms thata are part of the query
 	DwellTimes = []
 	currentSession = -1
 	currentClicks = dict()
 	currentTime = 0
 	currentPage = ""
+	currentUserID = -1
+	repeatedClicks = {}
+	selectedTopRankedResult = None
+	localUrlList = []
 	for line in train:
-		if count % 1000000 == 0:
-			print count / 1000000
-		if count > 10000000:
+		if count % (NUM_LINES/10) == 0:
+			print count / (NUM_LINES/10)
+		if count > NUM_LINES:
 			break
 		count += 1
 		tokens = line.split('\t')
@@ -36,7 +42,17 @@ with open(TrainFile) as train:
 		if (currentSession != session):
 			if (currentSession >= 0 and currentPage != ""):
 				currentClicks[currentPage] = -1 # final click
-				
+				if currentUserID not in repeatedClicks:
+					repeatedClicks[currentUserID] = {}
+					repeatedClicks[currentUserID][currentPage] = 1
+				else:
+					if currentPage not in repeatedClicks[currentUserID]:
+						repeatedClicks[currentUserID][currentPage] = 1
+					else:
+						repeatedClicks[currentUserID][currentPage] += 1
+
+
+
 			ComputeDwellTimes(currentClicks, DwellTimes)
 			currentSession = session
 			currentPage = ""
@@ -45,7 +61,9 @@ with open(TrainFile) as train:
 		if (tokens[1] == "M"):
 			sessionIDs.add(session)
 			userIDs.add(tokens[3])
+			currentUserID = tokens[3]
 		elif (tokens[2] == "Q" or tokens[2] == "T"):
+			localUrlList = []
 			#serpIDs.add(tokens[3])
 			queries.add(tokens[4])
 			#listOfTerms = tokens[5].split(',')
@@ -55,6 +73,7 @@ with open(TrainFile) as train:
 			for i in range(6, len(tokens)):
 				pair = tokens[i].split(',')
 				urls.add(pair[0])
+				localUrlList.append(pair[0])
 				domains.add(pair[1])
 				currentClicks[pair[0]] = 0
 		elif (tokens[2] == "C"):
@@ -62,6 +81,13 @@ with open(TrainFile) as train:
 				currentClicks[currentPage] = int(tokens[1])-currentTime
 			currentTime = int(tokens[1])
 			currentPage = tokens[4]
+			#is current page top-ranked
+			if currentPage != localUrlList[0]:
+				selectedTopRankedResult = False
+			else:
+				selectedTopRankedResult = True
+
+
 
 	print "Total clicks:", len(DwellTimes)
 	DwellTimes = np.array(DwellTimes)
