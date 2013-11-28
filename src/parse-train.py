@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import math
 import time
-NUM_LINES = 3000000#10000000
+NUM_LINES = 1000000#10000000
 
 TrainFile = "../data/train" #sys.argv[1]
 #TestFile = "test" #sys.argv[2]
@@ -23,10 +23,10 @@ def plotRepeatQueryPowerLaw(repeatedClicks):
 	repeatQ_dict = {}
 	for userId in repeatedClicks:
 		# print "we can optimize these clicks for %s" %(userId)
-		for urlId in repeatedClicks[userId]:
-			v = repeatedClicks[userId][urlId]
+		for queryId in repeatedClicks[userId]:
+			v = repeatedClicks[userId][queryId][1]
 			if v > 1 :
-				# print "userId: %s urlID: %svalue: %d" %(userId,urlId, v)
+				# print "userId: %s urlID: %svalue: %d" %(userId,queryId, v)
 				repeatQ += v
 				if v not in repeatQ_dict:
 					repeatQ_dict[v] = 1
@@ -51,7 +51,7 @@ def plotRepeatQueryPowerLaw(repeatedClicks):
  	plt.axis([2,max(repeatQ_X)*2, 1, max(repeatQ_Y)*2 ])
  	plt.title("Navigational queries")
  	print "slope of power law is ", m
- 	plt.show()
+ 	plt.savefig('../figures/navigation_power_laws.png')
  	return sum(repeatQ_dict.values())
 
 def main():
@@ -69,6 +69,7 @@ def main():
 		DwellTimes = []
 		currentSession = -1
 		currentClicks = dict()
+		currentQuery = ""
 		currentTime = 0
 		currentPage = ""
 		currentUserID = -1
@@ -90,12 +91,13 @@ def main():
 					if currentUserID not in repeatedClicks:
 						repeatedClicks[currentUserID] = {}
 						if selectedTopRankedResult == False:
-							repeatedClicks[currentUserID][currentPage] = 1
+							repeatedClicks[currentUserID][currentQuery] = (currentPage,1)
 					else:
-						if currentPage not in repeatedClicks[currentUserID] and selectedTopRankedResult == False:
-							repeatedClicks[currentUserID][currentPage] = 1
-						if currentPage in repeatedClicks[currentUserID] and selectedTopRankedResult == False:
-							repeatedClicks[currentUserID][currentPage] += 1
+						if currentQuery not in repeatedClicks[currentUserID] and selectedTopRankedResult == False:
+							repeatedClicks[currentUserID][currentQuery] = (currentPage,1)
+						if currentQuery in repeatedClicks[currentUserID] and selectedTopRankedResult == False:
+							tpl = repeatedClicks[currentUserID][currentQuery]
+							repeatedClicks[currentUserID][currentQuery] = (tpl[0], tpl[1] + 1)
 
 
 
@@ -109,9 +111,12 @@ def main():
 				userIDs.add(tokens[3])
 				currentUserID = tokens[3]
 			elif (tokens[2] == "Q" or tokens[2] == "T"):
+				# if currentUserID == "404":
+				# 	print line
 				localUrlList = []
 				#serpIDs.add(tokens[3])
 				queries.add(tokens[4])
+				currentQuery = tokens[4]
 				#listOfTerms = tokens[5].split(',')
 				#for term in listOfTerms:
 				#	terms.add(term)
@@ -123,6 +128,8 @@ def main():
 					domains.add(pair[1])
 					currentClicks[pair[0]] = 0
 			elif (tokens[2] == "C"):
+				# if currentUserID == "404":
+				# 	print line
 				if (currentPage != ""):
 					currentClicks[currentPage] = int(tokens[1])-currentTime
 				currentTime = int(tokens[1])
@@ -134,6 +141,19 @@ def main():
 					selectedTopRankedResult = True
 
 
+
+
+	#### lets save the repeatedClicks to file; so that we have the info
+	### and can look up in O(1) time when we run the test set
+
+	f_rep_clicks = open("../data/store_repeatClickDict.txt", "w")
+	for userId in repeatedClicks:
+		for queryId in repeatedClicks[userId]:
+			tpl = repeatedClicks[userId][queryId]
+			## only output if value is >= 2
+			if tpl[1] > 2:
+				f_rep_clicks.write("%s:%s:%s\n" %(userId, queryId, tpl[0]))
+	f_rep_clicks.close()
 
  ######### COMMENTED OUT FOR NOW #####
 		# print "Total clicks:", len(DwellTimes)
@@ -155,17 +175,17 @@ def main():
 		# 		OutF.write("%f %f\n" % (X[i], Y[i]))
 		# OutF.close()
 
-		end = time.clock()
-		repeatQ = plotRepeatQueryPowerLaw(repeatedClicks)
-		print end - start
-		# print "Session IDs:", len(sessionIDs)
-		# print "User IDs:", len(userIDs)
-		# print "SERP IDs:", len(serpIDs)
-		print "URLs:", len(urls)
-		print "Queries:", len(queries)
-		print "Fraction of queries ", repeatQ*1.0/len(queries)
-		print "Domains:", len(domains)
-		#test.close()
+	end = time.clock()
+	repeatQ = plotRepeatQueryPowerLaw(repeatedClicks)
+	print end - start
+	# print "Session IDs:", len(sessionIDs)
+	# print "User IDs:", len(userIDs)
+	# print "SERP IDs:", len(serpIDs)
+	print "URLs:", len(urls)
+	print "Queries:", len(queries)
+	print "Fraction of queries ", repeatQ*1.0/len(queries)
+	print "Domains:", len(domains)
+	#test.close()
 
 if __name__ == '__main__':
 	main()
