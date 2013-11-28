@@ -3,8 +3,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-import time
-NUM_LINES = 1000000#10000000
+# import time
+NUM_LINES = 200000000#10000000
 
 TrainFile = "../data/train" #sys.argv[1]
 #TestFile = "test" #sys.argv[2]
@@ -55,7 +55,7 @@ def plotRepeatQueryPowerLaw(repeatedClicks):
  	return sum(repeatQ_dict.values())
 
 def main():
-	start = time.clock()
+	# start = time.clock()
 	with open(TrainFile) as train:
 		#test = open(TestFile)
 		count = 0
@@ -175,9 +175,9 @@ def main():
 		# 		OutF.write("%f %f\n" % (X[i], Y[i]))
 		# OutF.close()
 
-	end = time.clock()
+	# end = time.clock()
 	repeatQ = plotRepeatQueryPowerLaw(repeatedClicks)
-	print end - start
+	# print end - start
 	# print "Session IDs:", len(sessionIDs)
 	# print "User IDs:", len(userIDs)
 	# print "SERP IDs:", len(serpIDs)
