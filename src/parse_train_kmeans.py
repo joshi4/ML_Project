@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-# import scipy.sparse as sparse
+import scipy.sparse as sp
 NUM_LINES = 200000000#10000000
 NUM_TEST_LINES = 3000000
 NUM_USERS = 5736333 #taken from the kaggle website
@@ -89,6 +89,19 @@ def AddDwellTimes(userVector,currentDomain,currentUserID,score):
         userVector[currentUserID] = {currentDomain: score}
 
 
+def createSparseMatrixOfFeatures(user_vector_path):
+    userDomainMatrix = sp.dok_matrix(NUM_USERS, NUM_DOMAINS)
+    with open(user_vector_path) as fin:
+        for line in fin:
+            line.strip('\n')
+            tokens = line.split(':')
+            userID = tokens[0]
+            domain = tokens[1]
+            score = tokens[2]
+            userDomainMatrix[userID,domain] = score
+    print userDomainMatrix[404,2567]
+
+
 def createUserDomainVectors(train_path):
     currentUserID = -1
     currentSession = -1
@@ -100,7 +113,7 @@ def createUserDomainVectors(train_path):
     #Columns/Features = NUM_DOMAINS
     userVector = { }
     file_user_vector = open("../data/user-vector-hash", "w")
-    # userDomainMatrix = sparse.dok_matrix(NUM_USERS, NUM_DOMAINS)
+    #
     with open(train_path) as train:
         for line in train:
             if count % (NUM_LINES/10000) == 0 :
@@ -165,7 +178,9 @@ def main():
     """
 
     train = "../data/train"
-    # test = "../data/test"
+    test = "../data/test"
+    user_vector_path = "../data/user-vector-hash"
+
     # domainSet = CalcTotalDomains(test).union(CalcTotalDomains(train))
     # CreateDomainIndexMapping(domainSet)
     # print len(domainSet)
@@ -173,7 +188,10 @@ def main():
     # fout.write("The domains in the training set are: %d\n" % (trainDomain) )
     # fout.write("The domains in the test set are: %d\n" % (testDomain))
     # fout.close()
-    createUserDomainVectors(train)
+
+    #createUserDomainVectors(train) ; job is done
+
+    createSparseMatrixOfFeatures(user_vector_path)
 
 if __name__ == '__main__':
     main()
