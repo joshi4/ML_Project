@@ -85,8 +85,8 @@ def parseTest(test_file, submit_file, navigationalDict):
                 currentUserID = int(tokens[3])
             if (tokens[2] == "T"):
                 qcnt+=1
+                localUrlList = []##doesn't make a difference here.
                 writtenToSubmit = False
-                localUrlList = []
                 currentQuery = int(tokens[4])
                 for i in range(6,len(tokens)):
                     pair = tokens[i].split(',')

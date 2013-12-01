@@ -171,11 +171,11 @@ def main():
 				# sessionIDs.add(session)
 				# userIDs.add(tokens[3])
 				currentUserID = int(tokens[3])
+				localUrlList = [] # This is the best place for this.
 			elif (tokens[2] == "Q" or tokens[2] == "T"):
 				# if currentUserID == "404":
 				# 	print line
 				qcnt += 1
-				localUrlList = []
 				#serpIDs.add(tokens[3])
 				# queries.add(tokens[4])
 				currentQuery = int(tokens[4])
@@ -198,7 +198,7 @@ def main():
 				# currentTime = int(tokens[1])
 				currentPage = int(tokens[4])
 				#is current page top-ranked
-				if currentPage != localUrlList[0]:
+				if( localUrlList.index(currentPage)) != 0 or (localUrlList.index(currentPage) % 10 != 0) :
 					selectedTopRankedResult = False
 				else:
 					selectedTopRankedResult = True
