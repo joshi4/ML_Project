@@ -84,8 +84,8 @@ def parseTest(test_file, submit_file, navigationalDict):
                 currentSession = int(tokens[0])
                 currentUserID = int(tokens[3])
             if (tokens[2] == "T"):
+                localUrlList = []
                 qcnt+=1
-                localUrlList = []##doesn't make a difference here.
                 writtenToSubmit = False
                 currentQuery = int(tokens[4])
                 for i in range(6,len(tokens)):
@@ -99,7 +99,7 @@ def parseTest(test_file, submit_file, navigationalDict):
                         pg = v[currentQuery]
                         #delete that particular entry and
                         #bump it to the top.
-                        if pg in localUrlList and pg != localUrlList[0]:
+                        if pg in localUrlList and localUrlList.index(pg)%10 != 0:
                             localUrlList.remove(int(pg))
                             localUrlList.insert(0,pg)
                             writeToSubmitFile(f_submit, currentSession, localUrlList)
@@ -148,7 +148,8 @@ def main():
 
     #file paths
     test_file = "../data/test"
-    navig_file = "../data/navigationalQuery_dictionary_raw_form.txt"
+    # navig_file = "../data/navigationalQuery_dictionary_raw_form.txt"
+    navig_file = "../data/store_repeatClickDict.txt"
     submit_file = "../data/submit_file"
 
     # f_test = open(test_file, "r")
