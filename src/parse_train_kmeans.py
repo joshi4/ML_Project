@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 
+import sklearn.cluster as skc
+import numpy as np
 import scipy.sparse as sp
 NUM_LINES = 200000000#10000000
 NUM_TEST_LINES = 3000000
-NUM_USERS = 5736333 #taken from the kaggle website
+NUM_USERS = 5792883 #taken from the kaggle website
 NUM_DOMAINS =  5260184 #Placeholder value placed here.
 # domain indices go from 0 to 5260183
 FINAL_CLICK_SCORE = 10000
@@ -110,7 +112,7 @@ def AddDwellTimes(userVector,currentDomainIndex,currentUserID,score):
 
 
 def createSparseMatrixOfFeatures(user_vector_path):
-    userDomainMatrix = sp.dok_matrix((NUM_USERS, NUM_DOMAINS))
+    userDomainMatrix = sp.lil_matrix((NUM_USERS, NUM_DOMAINS))
     # tmpCount = 0
     cnt = 0
     with open(user_vector_path) as fin:
@@ -134,17 +136,10 @@ def createSparseMatrixOfFeatures(user_vector_path):
                 ## now add it to the sparse matrix
                 ##delete the key
                 for dom in tmpDict[currentUserID]:
-                    print currentUserID,dom
-
-
-
-
+                    #print currentUserID,dom
                     userDomainMatrix[currentUserID,dom] = tmpDict[currentUserID][dom]
-
-
                     # if currentUserID == 5:
                     #     print dom,tmpDict[currentUserID][dom]
-
                 del tmpDict[currentUserID]
 
 
@@ -161,6 +156,7 @@ def createSparseMatrixOfFeatures(user_vector_path):
 
 
     print userDomainMatrix.getrow(5).sum(axis=1)
+    return userDomainMatrix
 
 
 def createUserDomainVectors(train_path, getIndexForDomain):
@@ -168,6 +164,7 @@ def createUserDomainVectors(train_path, getIndexForDomain):
     currentSession = -1
     currentDomain = -1
     count = 0
+    currentTime = -1
     localUrlToDomainDict = {}
     ##creating a sparse matrix
     #Rows = NUM_USERS
@@ -207,8 +204,12 @@ def createUserDomainVectors(train_path, getIndexForDomain):
                 ### will probably imporve my ranking.
                 localUrlToDomainDict.clear()
             elif (tokens[2] == "Q" or tokens[2] == "T"):
-                clickFlag = False
+                if clickFlag:
+                    score = int(tokens[1]) - currentTime
+                    clickFlag = False
+                    AddDwellTimes(userVector,getIndexForDomain[currentDomain],currentUserID,score)
                 currentTime  = int(tokens[1])
+
 
                 for i in range(6, len(tokens)):
                     pair = (tokens[i].split(','))
@@ -229,7 +230,10 @@ def createUserDomainVectors(train_path, getIndexForDomain):
 
     file_user_vector.close()
 
-
+def RunKmeans(X, clusters):
+    km = skc.KMeans(n_clusters=clusters, precompute_distances=True, n_jobs=-1)
+    predictArray = km.fit_predict(X)
+    np.save("../data/predictArray", predictArray)
 
 def main():
     """
@@ -248,7 +252,7 @@ def main():
     train = "../data/train"
     test = "../data/test"
     user_vector_path = "../data/user-vector-hash"
-
+    clusters = 1000
     # domainSet = CalcTotalDomains(test).union(CalcTotalDomains(train))
     #domainSet = CalcTotalDomains([test,train])
     # CreateDomainIndexMapping(domainSet)
@@ -261,10 +265,11 @@ def main():
 
     # Get the domain index mapping
 
-    getIndexForDomain = ReadDomainIndexMapping()
-    createUserDomainVectors(train, getIndexForDomain) #; job is done
+    #getIndexForDomain = ReadDomainIndexMapping()
+    #createUserDomainVectors(train, getIndexForDomain) #; job is done
 
-    #createSparseMatrixOfFeatures(user_vector_path)
+    X = createSparseMatrixOfFeatures(user_vector_path)
+    RunKmeans(X, clusters)
 
 if __name__ == '__main__':
     main()
